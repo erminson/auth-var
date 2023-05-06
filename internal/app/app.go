@@ -17,7 +17,7 @@ func Run() {
 	ctx := context.Background()
 	router := httprouter.New()
 	v1.NewRouter(ctx, router /* logger and usecases */)
-	httpServer := httpserver.New(router)
+	httpServer := httpserver.New(router, httpserver.Port("8088"))
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
