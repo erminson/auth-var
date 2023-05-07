@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/erminson/auth-var/internal/controller/http/v1"
+	"github.com/erminson/auth-var/internal/usecase"
+	"github.com/erminson/auth-var/internal/usecase/repo"
 	"github.com/erminson/auth-var/pkg/httpserver"
 	"github.com/erminson/auth-var/pkg/postgres"
 	"github.com/julienschmidt/httprouter"
@@ -16,15 +18,18 @@ func Run() {
 	fmt.Println("App running...")
 
 	pg, err := postgres.New("postgresql://localhost:5430/authvar_db?user=authvar_dev_user&password=authvar_dev_paSSword")
-	//pg, err := postgres.New("postgresql://localhost:5430/hadam_db?user=hadam_dev_user&password=hadam_dev_paSSword")
 	if err != nil {
 		fmt.Println(fmt.Errorf("app - Run - postgres.New: %w", err).Error())
+		return
 	}
 	defer pg.Close()
 
-	ctx := context.Background()
+	authUseCase := usecase.New(
+		repo.New(pg),
+	)
+
 	router := httprouter.New()
-	v1.NewRouter(ctx, router /* logger and usecases */)
+	v1.NewRouter(context.Background(), router, authUseCase)
 	httpServer := httpserver.New(router, httpserver.Port("8088"))
 
 	interrupt := make(chan os.Signal, 1)

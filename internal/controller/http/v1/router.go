@@ -8,15 +8,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func NewRouter(ctx context.Context, router *httprouter.Router /* logger and usecases */) {
+func NewRouter(ctx context.Context, router *httprouter.Router, auth *usecase.Auth) {
 	userHandler := user_handler.New( /* logger and usecase */ )
 	router.POST("/api/v1/user", userHandler.CreateUser(ctx))
 	router.GET("/api/v1/user", userHandler.GetUsers(ctx))
 	router.GET("/api/v1/user/:id", userHandler.GetUserById(ctx))
 	router.DELETE("/api/v1/user/:id", userHandler.DeleteUserById(ctx))
 
-	confirmation := usecase.New()
-	authHandler := auth_handler.New(confirmation)
+	authHandler := auth_handler.New(auth)
 	router.POST("/api/v1/auth/phone", authHandler.GenerateConfirmationCode(ctx))
 	router.POST("/api/v1/auth/confirm", authHandler.ConfirmPhoneNumber(ctx))
 }

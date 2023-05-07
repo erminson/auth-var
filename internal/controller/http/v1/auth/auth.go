@@ -47,10 +47,10 @@ type ApiError struct {
 }
 
 type AuthHandler struct {
-	u *usecase.Confirmation
+	u *usecase.Auth
 }
 
-func New(confirmation *usecase.Confirmation) *AuthHandler {
+func New(confirmation *usecase.Auth) *AuthHandler {
 	return &AuthHandler{
 		u: confirmation,
 	}
