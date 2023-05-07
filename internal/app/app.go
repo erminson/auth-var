@@ -5,6 +5,7 @@ import (
 	"fmt"
 	v1 "github.com/erminson/auth-var/internal/controller/http/v1"
 	"github.com/erminson/auth-var/pkg/httpserver"
+	"github.com/erminson/auth-var/pkg/postgres"
 	"github.com/julienschmidt/httprouter"
 	"os"
 	"os/signal"
@@ -13,6 +14,13 @@ import (
 
 func Run() {
 	fmt.Println("App running...")
+
+	pg, err := postgres.New("postgresql://localhost:5430/authvar_db?user=authvar_dev_user&password=authvar_dev_paSSword")
+	//pg, err := postgres.New("postgresql://localhost:5430/hadam_db?user=hadam_dev_user&password=hadam_dev_paSSword")
+	if err != nil {
+		fmt.Println(fmt.Errorf("app - Run - postgres.New: %w", err).Error())
+	}
+	defer pg.Close()
 
 	ctx := context.Background()
 	router := httprouter.New()
@@ -29,7 +37,7 @@ func Run() {
 		fmt.Println(fmt.Errorf("app - Run - signal: %s", s.String()))
 	}
 
-	err := httpServer.Shutdown()
+	err = httpServer.Shutdown()
 	if err != nil {
 		fmt.Println(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err))
 	}
