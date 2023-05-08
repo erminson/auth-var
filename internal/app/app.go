@@ -6,6 +6,7 @@ import (
 	v1 "github.com/erminson/auth-var/internal/controller/http/v1"
 	"github.com/erminson/auth-var/internal/usecase"
 	"github.com/erminson/auth-var/internal/usecase/repo"
+	"github.com/erminson/auth-var/internal/usecase/webapi"
 	"github.com/erminson/auth-var/pkg/httpserver"
 	"github.com/erminson/auth-var/pkg/postgres"
 	"github.com/julienschmidt/httprouter"
@@ -26,6 +27,7 @@ func Run() {
 
 	authUseCase := usecase.New(
 		repo.New(pg),
+		webapi.New("token"),
 	)
 
 	router := httprouter.New()

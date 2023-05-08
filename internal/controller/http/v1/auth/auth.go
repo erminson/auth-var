@@ -28,7 +28,7 @@ type PhoneConfirmRequest struct {
 
 type MessageResponse struct {
 	Text   string `json:"text"`
-	Digit  byte   `json:"digit"`
+	Digit  int    `json:"digit"`
 	Source string `json:"source"`
 }
 
