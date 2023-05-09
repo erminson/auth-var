@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	_defaultAccessDuration  = time.Hour
+	_defaultRefreshDuration = time.Hour * 24 * 7
+)
+
 type TokensDetails struct {
 	Access     string
 	AccessExp  int64
@@ -15,12 +20,24 @@ type TokensDetails struct {
 }
 
 type JWTClient struct {
-	secret []byte
+	secret          []byte
+	accessDuration  time.Duration
+	refreshDuration time.Duration
 }
 
 func New(secret string) *JWTClient {
+	return NewWithDurations(
+		secret,
+		_defaultAccessDuration,
+		_defaultRefreshDuration,
+	)
+}
+
+func NewWithDurations(secret string, accessDuration, refreshDuration time.Duration) *JWTClient {
 	return &JWTClient{
-		secret: []byte(secret),
+		secret:          []byte(secret),
+		accessDuration:  accessDuration,
+		refreshDuration: refreshDuration,
 	}
 }
 
@@ -41,8 +58,8 @@ func (j *JWTClient) GenerateTokenString(tokenType string, exp int64, userId int)
 
 func (j *JWTClient) GenerateTokenDetails(userId int) (TokensDetails, error) {
 	td := TokensDetails{
-		AccessExp:  time.Now().Add(time.Hour * 1).Unix(),
-		RefreshExp: time.Now().Add(time.Hour * 24 * 7).Unix(),
+		AccessExp:  time.Now().Add(j.accessDuration).Unix(),
+		RefreshExp: time.Now().Add(j.refreshDuration).Unix(),
 		UserId:     userId,
 	}
 
