@@ -7,6 +7,7 @@ import (
 	"github.com/erminson/auth-var/internal/entity"
 	"github.com/erminson/auth-var/internal/usecase/repo"
 	"github.com/erminson/auth-var/internal/usecase/webapi"
+	jwt_client "github.com/erminson/auth-var/pkg/jwt"
 	"strings"
 	"time"
 )
@@ -20,12 +21,14 @@ var (
 type Auth struct {
 	repo   *repo.AuthRepo
 	webAPI *webapi.ConfirmAPI
+	jwt    *jwt_client.JWTClient
 }
 
-func New(r *repo.AuthRepo, w *webapi.ConfirmAPI) *Auth {
+func New(r *repo.AuthRepo, w *webapi.ConfirmAPI, j *jwt_client.JWTClient) *Auth {
 	return &Auth{
 		repo:   r,
 		webAPI: w,
+		jwt:    j,
 	}
 }
 
@@ -91,8 +94,13 @@ func (a *Auth) ConfirmPhoneNumber(ctx context.Context, phoneNumber, code string)
 	//	return entity.Tokens{}, err
 	//}
 
+	td, err := a.jwt.GenerateTokenDetails(1)
+	if err != nil {
+		return entity.Tokens{}, err
+	}
+
 	return entity.Tokens{
-		Access:  "access_token",
-		Refresh: "refresh_token",
+		Access:  td.Access,
+		Refresh: td.Refresh,
 	}, nil
 }

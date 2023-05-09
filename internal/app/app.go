@@ -8,6 +8,7 @@ import (
 	"github.com/erminson/auth-var/internal/usecase/repo"
 	"github.com/erminson/auth-var/internal/usecase/webapi"
 	"github.com/erminson/auth-var/pkg/httpserver"
+	jwt_client "github.com/erminson/auth-var/pkg/jwt"
 	"github.com/erminson/auth-var/pkg/postgres"
 	"github.com/julienschmidt/httprouter"
 	"os"
@@ -28,6 +29,7 @@ func Run() {
 	authUseCase := usecase.New(
 		repo.New(pg),
 		webapi.New("token"),
+		jwt_client.New("CIcaqLR27InWdldWaM96gXkPW90dc4tR8At3H7Sx"),
 	)
 
 	router := httprouter.New()
