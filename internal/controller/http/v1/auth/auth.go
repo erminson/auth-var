@@ -26,6 +26,10 @@ type PhoneConfirmRequest struct {
 	Code  string `json:"code"`
 }
 
+type RefreshRequest struct {
+	Refresh string `json:"refresh"`
+}
+
 type MessageResponse struct {
 	Text   string `json:"text"`
 	Digit  int    `json:"digit"`
@@ -35,6 +39,10 @@ type MessageResponse struct {
 type TokensResponse struct {
 	Access  string `json:"access"`
 	Refresh string `json:"refresh"`
+}
+
+type AccessResponse struct {
+	Access string `json:"access"`
 }
 
 type JsonErrorResponse struct {
@@ -154,6 +162,47 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(m); err != nil {
+			panic(err)
+		}
+	}
+
+	return fn
+}
+
+func (h *AuthHandler) Refresh(ctx context.Context) httprouter.Handle {
+	fn := func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		data, err := io.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
+			h.errorResponse(w, apiError)
+			return
+		}
+
+		var refreshRequest RefreshRequest
+		err = json.Unmarshal(data, &refreshRequest)
+		if err != nil {
+			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
+			h.errorResponse(w, apiError)
+			return
+		}
+
+		token, err := h.u.Refresh(ctx, refreshRequest.Refresh, 1)
+		if err != nil {
+			apiError := &ApiError{
+				Status: http.StatusBadRequest,
+				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
+			}
+			h.errorResponse(w, apiError)
+			return
+		}
+
+		a := AccessResponse{
+			Access: token.Token,
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(a); err != nil {
 			panic(err)
 		}
 	}

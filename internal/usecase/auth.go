@@ -104,3 +104,19 @@ func (a *Auth) ConfirmPhoneNumber(ctx context.Context, phoneNumber, code string)
 		Refresh: td.Refresh,
 	}, nil
 }
+
+func (a *Auth) Refresh(ctx context.Context, refreshToken string, userId int) (entity.Token, error) {
+	err := a.jwt.VerifyToken(refreshToken)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	access, err := a.jwt.GenerateAccessTokenString(userId)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	return entity.Token{
+		Token: access,
+	}, nil
+}

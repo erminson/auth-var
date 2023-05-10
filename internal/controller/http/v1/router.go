@@ -18,4 +18,5 @@ func NewRouter(ctx context.Context, router *httprouter.Router, auth *usecase.Aut
 	authHandler := auth_handler.New(auth)
 	router.POST("/api/v1/auth/phone", authHandler.GenerateConfirmationCode(ctx))
 	router.POST("/api/v1/auth/confirm", authHandler.ConfirmPhoneNumber(ctx))
+	router.POST("/api/v1/auth/refresh", authHandler.Refresh(ctx))
 }

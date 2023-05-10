@@ -11,6 +11,17 @@ const (
 	_defaultRefreshDuration = time.Hour * 24 * 7
 )
 
+type TokenType string
+
+const (
+	AccessToken  TokenType = "access"
+	RefreshToken           = "refresh"
+)
+
+func (t TokenType) String() string {
+	return string(t)
+}
+
 type TokensDetails struct {
 	Access     string
 	AccessExp  int64
@@ -41,7 +52,11 @@ func NewWithDurations(secret string, accessDuration, refreshDuration time.Durati
 	}
 }
 
-func (j *JWTClient) GenerateTokenString(tokenType string, exp int64, userId int) (string, error) {
+func (j *JWTClient) GenerateAccessTokenString(userId int) (string, error) {
+	return j.GenerateTokenString(AccessToken, time.Now().Add(j.accessDuration).Unix(), userId)
+}
+
+func (j *JWTClient) GenerateTokenString(tokenType TokenType, exp int64, userId int) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["token_type"] = tokenType
 	claims["exp"] = exp
@@ -64,14 +79,14 @@ func (j *JWTClient) GenerateTokenDetails(userId int) (TokensDetails, error) {
 	}
 
 	// Access Token
-	access, err := j.GenerateTokenString("access", td.AccessExp, td.UserId)
+	access, err := j.GenerateTokenString(AccessToken, td.AccessExp, td.UserId)
 	if err != nil {
 		return TokensDetails{}, err
 	}
 	td.Access = access
 
 	// Refresh Token
-	refresh, err := j.GenerateTokenString("refresh", td.RefreshExp, td.UserId)
+	refresh, err := j.GenerateTokenString(RefreshToken, td.RefreshExp, td.UserId)
 	if err != nil {
 		return TokensDetails{}, err
 	}
