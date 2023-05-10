@@ -54,7 +54,7 @@ func (a *Auth) GenerateConfirmationCode(ctx context.Context, phoneNumber string)
 		ValidTil:  createdAt.Add(time.Duration(time.Minute * 3)),
 	}
 
-	err = a.repo.Store(ctx, authPhone)
+	err = a.repo.StoreAuth(ctx, authPhone)
 	if err != nil {
 		return entity.Message{}, err
 	}
@@ -63,7 +63,7 @@ func (a *Auth) GenerateConfirmationCode(ctx context.Context, phoneNumber string)
 }
 
 func (a *Auth) ConfirmPhoneNumber(ctx context.Context, phoneNumber, code string) (entity.Tokens, error) {
-	authPhone, err := a.repo.GetLastByPhoneNumber(ctx, phoneNumber)
+	authPhone, err := a.repo.GetLastAuthByPhoneNumber(ctx, phoneNumber)
 	if err != nil {
 		return entity.Tokens{}, err
 	}
@@ -80,15 +80,11 @@ func (a *Auth) ConfirmPhoneNumber(ctx context.Context, phoneNumber, code string)
 		return entity.Tokens{}, ErrConfirmationCodeHasExpired
 	}
 
-	count, err := a.repo.ConfirmPhoneNumberById(ctx, authPhone.Id)
+	err = a.repo.ConfirmPhoneNumberAndSaveUser(ctx, authPhone)
 	if err != nil {
 		return entity.Tokens{}, err
 	}
-
-	if count == 0 {
-		return entity.Tokens{}, ErrPhoneNumberNotFound
-	}
-
+	
 	//err = a.webAPI.ConfirmNumber(phoneNumber, code)
 	//if err != nil {
 	//	return entity.Tokens{}, err

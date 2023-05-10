@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.user
     id              BIGSERIAL PRIMARY KEY,
     phone           VARCHAR(20) NOT NULL UNIQUE,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
-    delete_at       TIMESTAMP WITH TIME ZONE NOT NULL
+    delete_at       TIMESTAMP WITH TIME ZONE
 );
 
 ALTER TABLE public.user OWNER TO authvar_dev_user;
