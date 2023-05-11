@@ -22,19 +22,21 @@ type Postgres struct {
 	Pool *pgxpool.Pool
 }
 
-func New(url string) (*Postgres, error) {
+func New(url string, opts ...Option) (*Postgres, error) {
 	pg := &Postgres{
 		maxPoolSize:  _defaultMaxPoolSize,
 		connAttempts: _defaultConnAttempts,
 		connTimeout:  _defaultConnTimeout,
 	}
 
+	for _, opt := range opts {
+		opt(pg)
+	}
+
 	poolConfig, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, fmt.Errorf("postgres - NewPostgres - pgxpool.ParseConfig: %w", err)
 	}
-
-	poolConfig.MaxConns = int32(pg.maxPoolSize)
 
 	for pg.connAttempts > 0 {
 		pg.Pool, err = pgxpool.NewWithConfig(context.Background(), poolConfig)

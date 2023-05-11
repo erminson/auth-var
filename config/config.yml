@@ -1,0 +1,12 @@
+app:
+  name: 'auth-var'
+  version: '0.1.0'
+
+http:
+  port: '8088'
+
+logger:
+  log_level: 'debug'
+
+postgres:
+  pool_max: 2

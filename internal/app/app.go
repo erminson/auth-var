@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/erminson/auth-var/config"
 	v1 "github.com/erminson/auth-var/internal/controller/http/v1"
 	"github.com/erminson/auth-var/internal/usecase"
 	"github.com/erminson/auth-var/internal/usecase/repo"
@@ -17,14 +18,14 @@ import (
 	"syscall"
 )
 
-func Run() {
+func Run(cfg *config.Config) {
 	l := logger.New("debug")
 	l.Info("App running...")
 
 	// Repository
-	pg, err := postgres.New("postgres://localhost:5430/authvar_db?user=authvar_dev_user&password=authvar_dev_paSSword")
+	pg, err := postgres.New(cfg.PG.URL, postgres.MaxPoolSize(cfg.PG.PoolMax))
 	if err != nil {
-		l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err).Error())
+		l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
 	}
 	defer pg.Close()
 
@@ -32,13 +33,13 @@ func Run() {
 	uc := usecase.New(
 		repo.New(pg),
 		webapi.New("token"),
-		jwt_client.New("CIcaqLR27InWdldWaM96gXkPW90dc4tR8At3H7Sx"),
+		jwt_client.New(cfg.JWT.SecretKey),
 	)
 
 	// HTTP Server
 	r := httprouter.New()
 	v1.NewRouter(context.Background(), l, r, uc)
-	httpServer := httpserver.New(r, httpserver.Port("8088"))
+	httpServer := httpserver.New(r, httpserver.Port(cfg.HTTP.Port))
 
 	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
