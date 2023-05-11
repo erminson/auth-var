@@ -9,6 +9,7 @@ import (
 	"github.com/erminson/auth-var/internal/usecase/webapi"
 	"github.com/erminson/auth-var/pkg/httpserver"
 	jwt_client "github.com/erminson/auth-var/pkg/jwt"
+	"github.com/erminson/auth-var/pkg/logger"
 	"github.com/erminson/auth-var/pkg/postgres"
 	"github.com/julienschmidt/httprouter"
 	"os"
@@ -17,37 +18,42 @@ import (
 )
 
 func Run() {
-	fmt.Println("App running...")
+	l := logger.New("debug")
+	l.Info("App running...")
 
-	pg, err := postgres.New("postgresql://localhost:5430/authvar_db?user=authvar_dev_user&password=authvar_dev_paSSword")
+	// Repository
+	pg, err := postgres.New("postgres://localhost:5430/authvar_db?user=authvar_dev_user&password=authvar_dev_paSSword")
 	if err != nil {
-		fmt.Println(fmt.Errorf("app - Run - postgres.New: %w", err).Error())
-		return
+		l.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err).Error())
 	}
 	defer pg.Close()
 
-	authUseCase := usecase.New(
+	// Use case
+	uc := usecase.New(
 		repo.New(pg),
 		webapi.New("token"),
 		jwt_client.New("CIcaqLR27InWdldWaM96gXkPW90dc4tR8At3H7Sx"),
 	)
 
-	router := httprouter.New()
-	v1.NewRouter(context.Background(), router, authUseCase)
-	httpServer := httpserver.New(router, httpserver.Port("8088"))
+	// HTTP Server
+	r := httprouter.New()
+	v1.NewRouter(context.Background(), l, r, uc)
+	httpServer := httpserver.New(r, httpserver.Port("8088"))
 
+	// Waiting signal
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
 
 	select {
 	case err := <-httpServer.Notify():
-		fmt.Println(fmt.Errorf("app - Run - httpServer.Notify: %w", err))
+		l.Error(fmt.Errorf("app - Run - httpServer.Notify: %w", err))
 	case s := <-interrupt:
-		fmt.Println(fmt.Errorf("app - Run - signal: %s", s.String()))
+		l.Error(fmt.Errorf("app - Run - signal: %s", s.String()))
 	}
 
+	// Shutdown
 	err = httpServer.Shutdown()
 	if err != nil {
-		fmt.Println(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err))
+		l.Error(fmt.Errorf("app - Run - httpServer.Shutdown: %w", err))
 	}
 }

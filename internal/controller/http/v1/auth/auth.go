@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/erminson/auth-var/internal/usecase"
+	"github.com/erminson/auth-var/pkg/logger"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
@@ -55,12 +56,14 @@ type ApiError struct {
 }
 
 type AuthHandler struct {
+	l logger.Interface
 	u *usecase.Auth
 }
 
-func New(confirmation *usecase.Auth) *AuthHandler {
+func New(log logger.Interface, uc *usecase.Auth) *AuthHandler {
 	return &AuthHandler{
-		u: confirmation,
+		l: log,
+		u: uc,
 	}
 }
 
@@ -69,6 +72,7 @@ func (h *AuthHandler) GenerateConfirmationCode(ctx context.Context) httprouter.H
 		data, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -77,6 +81,7 @@ func (h *AuthHandler) GenerateConfirmationCode(ctx context.Context) httprouter.H
 		var authPhone AuthPhoneRequest
 		err = json.Unmarshal(data, &authPhone)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -84,6 +89,7 @@ func (h *AuthHandler) GenerateConfirmationCode(ctx context.Context) httprouter.H
 
 		err = h.validateAuthPhoneRequest(&authPhone)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{
 				Status: http.StatusBadRequest,
 				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
@@ -94,6 +100,7 @@ func (h *AuthHandler) GenerateConfirmationCode(ctx context.Context) httprouter.H
 
 		msg, err := h.u.GenerateConfirmationCode(ctx, authPhone.Phone)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{
 				Status: http.StatusBadRequest,
 				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
@@ -109,8 +116,8 @@ func (h *AuthHandler) GenerateConfirmationCode(ctx context.Context) httprouter.H
 		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(m); err != nil {
-			panic(err)
+		if err = json.NewEncoder(w).Encode(m); err != nil {
+			h.l.Fatal(err.Error())
 		}
 	}
 
@@ -122,6 +129,7 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 		data, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -130,6 +138,7 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 		var phoneConfirm PhoneConfirmRequest
 		err = json.Unmarshal(data, &phoneConfirm)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -137,6 +146,7 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 
 		err = h.validatePhoneConfirmRequest(&phoneConfirm, 4)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{
 				Status: http.StatusBadRequest,
 				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
@@ -147,6 +157,7 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 
 		t, err := h.u.ConfirmPhoneNumber(ctx, phoneConfirm.Phone, phoneConfirm.Code)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{
 				Status: http.StatusBadRequest,
 				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
@@ -161,8 +172,8 @@ func (h *AuthHandler) ConfirmPhoneNumber(ctx context.Context) httprouter.Handle 
 		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(m); err != nil {
-			panic(err)
+		if err = json.NewEncoder(w).Encode(m); err != nil {
+			h.l.Fatal(err.Error())
 		}
 	}
 
@@ -174,6 +185,7 @@ func (h *AuthHandler) Refresh(ctx context.Context) httprouter.Handle {
 		data, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -182,6 +194,7 @@ func (h *AuthHandler) Refresh(ctx context.Context) httprouter.Handle {
 		var refreshRequest RefreshRequest
 		err = json.Unmarshal(data, &refreshRequest)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{Status: http.StatusBadRequest, Title: "Bad Request"}
 			h.errorResponse(w, apiError)
 			return
@@ -189,6 +202,7 @@ func (h *AuthHandler) Refresh(ctx context.Context) httprouter.Handle {
 
 		token, err := h.u.Refresh(ctx, refreshRequest.Refresh, 1)
 		if err != nil {
+			h.l.Error(err.Error())
 			apiError := &ApiError{
 				Status: http.StatusBadRequest,
 				Title:  fmt.Sprintf("Bad Request. Error: %s", err.Error()),
@@ -202,8 +216,8 @@ func (h *AuthHandler) Refresh(ctx context.Context) httprouter.Handle {
 		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(a); err != nil {
-			panic(err)
+		if err = json.NewEncoder(w).Encode(a); err != nil {
+			h.l.Fatal(err.Error())
 		}
 	}
 
@@ -216,7 +230,7 @@ func (h *AuthHandler) errorResponse(w http.ResponseWriter, apiError *ApiError) {
 
 	response := JsonErrorResponse{Error: apiError}
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(err)
+		h.l.Fatal(err.Error())
 	}
 }
 
