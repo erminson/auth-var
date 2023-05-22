@@ -3,7 +3,7 @@ app:
   version: '0.1.0'
 
 http:
-  port: '8088'
+  port: '8080'
 
 logger:
   log_level: 'debug'

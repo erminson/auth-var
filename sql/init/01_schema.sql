@@ -1,7 +1,3 @@
-CREATE USER authvar_dev_user WITH PASSWORD 'authvar_dev_paSSword';
-
-CREATE DATABASE authvar_db OWNER authvar_dev_user;
-
 CREATE TABLE IF NOT EXISTS public.auth_phone
 (
     id              BIGSERIAL PRIMARY KEY,
